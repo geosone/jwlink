@@ -758,6 +758,13 @@ static bool CmpLeaderPtr( void *a, void *b )
     return( a == b );
 }
 
+static bool PieceNotEmpty( void *piece, void *dummy )
+/*****************************************************/
+{
+    dummy = dummy;
+    return( ((segdata *)piece)->length != 0 );
+}
+
 void AddToGroup( group_entry *group, seg_leader *seg )
 /***********************************************************/
 {
@@ -765,6 +772,14 @@ void AddToGroup( group_entry *group, seg_leader *seg )
     if( Ring2Lookup( group->leaders, CmpLeaderPtr, seg ) )
         return;
     if( seg->group != NULL && seg->group != group ) {
+        /* jwlink: an empty segment of the same name in two groups (DATA
+         * of the OpenWatcom startup in DGROUP, DATA of the
+         * assembler modules in another group) is harmless: keep the first group */
+        if( RingLookup( seg->pieces, PieceNotEmpty, NULL ) == NULL ) {
+            LnkMsg( LOC+WRN+MSG_SEG_IN_TWO_GROUPS, "123", seg->segname,
+                                   seg->group->sym->name, group->sym->name );
+            return;
+        }
         LnkMsg( LOC+ERR+MSG_SEG_IN_TWO_GROUPS, "123", seg->segname,
                                    seg->group->sym->name, group->sym->name );
         return;
