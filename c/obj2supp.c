@@ -1728,6 +1728,22 @@ static void Relocate( save_fixup *save, fix_data *fix, frame_spec *targ )
         datasize += shift;
         fix->data += 2;
     }
+    /* jwlink: restore the addend saved with this fixup first. Data records
+     * may overwrite a location that already had a fixup (forward references
+     * in MASM / JWasm objects); Microsoft LINK applies data and fixups in
+     * record order, so each fixup works on the data of its own record and
+     * the last one wins. Without this, both fixups were added up. */
+    if( !( LinkFlags & INC_LINK_FLAG ) ) {
+        unsigned n = CalcFixupSize( fix->type );
+        if( save->flags & FIX_ADDEND_ZERO ) {
+            PutNulls( CurrRec.seg->data + save->off, n );
+        } else {
+            unsigned asz = CalcAddendSize( save->flags );
+            PutInfo( CurrRec.seg->data + save->off,
+                     (char *)save + CalcSavedFixSize( save->flags ) - asz,
+                     n < asz ? n : asz );
+        }
+    }
     ReadInfo( CurrRec.seg->data + save->off - shift, fix->data - shift, datasize );
 
     if( !CheckSpecials( fix, targ ) ) {
