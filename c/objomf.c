@@ -711,6 +711,10 @@ static void ProcSegDef( struct objbuff *ob )
         sdata->combine = COMBINE_ADD;
     }
     sdata->align = OMFAlignTab[acbp >> 5];
+    /* jwlink: like Microsoft LINK, a segment with combine type STACK
+     * starts on a paragraph */
+    if( comb == COMB_STACK && sdata->align < OMFAlignTab[ALIGN_PARA] )
+        sdata->align = OMFAlignTab[ALIGN_PARA];
     if( ObjFormat & FMT_EASY_OMF ) {   // set USE_32 flag.
         sdata->is32bit = TRUE;
     } else if( acbp & 1 ) {

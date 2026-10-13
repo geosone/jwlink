@@ -593,8 +593,12 @@ class_entry *FindClass( section *sect, char *name, bool is32bit,
         if( stricmp( currclass->name, name ) == 0
                         && !((currclass->flags & CLASS_32BIT) ^ is32bit) ) {
             /* jwlink: don't mix STACK combine with other classes */
-            if ( comb == COMBINE_STACK && ( !(currclass->flags & CLASS_STACK ) ) )
+            /* jwlink: keep lastclass up to date, else the new class is
+             * linked in at the wrong place and the classes after it get lost */
+            if ( comb == COMBINE_STACK && ( !(currclass->flags & CLASS_STACK ) ) ) {
+                lastclass = currclass;
                 continue;
+            }
             DEBUG((DBG_OLD,"FindClass(\"%s\"): class found ", name ));
             return( currclass );
         }
